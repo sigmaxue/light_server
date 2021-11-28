@@ -9,5 +9,5 @@ extern const int   kBufferSize;
 extern const int   kReactorMaxTaskNum;
 extern const char* kRsp200;
 
-extern const int kTypeLed;
+extern int kTypeLed;
 #endif /* VAR_H_ */

@@ -40,16 +40,15 @@ int AddEvent( struct Reactor*   reactor,
 
 
 int AddTask( struct Reactor* reactor, struct Task* task ) {
-    reactor->tasks[ reactor->task_num++ ] = *task;
+    reactor->tasks[ reactor->task_num ] = *task;
+    kTypeLed = reactor->task_num ++;
+    task->type = kTypeLed;
     return 0;
 }
 
 int InitTasks( struct Reactor* reactor ) {
     int i = 0;
     for ( i = 0; i < reactor->task_num; i++ ) {
-        if ( !reactor->tasks[ i ].enable ) {
-            continue;
-        }
         struct Task* task = &reactor->tasks[ i ];
         task->Init( task );
     }

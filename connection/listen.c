@@ -5,9 +5,10 @@
 #include <core/reactor.h>
 #include <global/var.h>
 #include <sys/epoll.h>
+#include <task/task.h>
 
 
-extern int bLedOpen;
+extern struct Reactor thread_reactor;
 
 void ReadHandler( void *ev ) {
     printf( "%s\n", __FUNCTION__ );
@@ -36,8 +37,11 @@ void ReadHandler( void *ev ) {
 
 	ret = Write( socket, event->write_buffer, event->write_size );
 	
-	if (ret>0)
-		bLedOpen = 1;
+	if (ret>0) {
+		struct Task *task = &(thread_reactor.tasks[kTypeLed]);
+		task->enable = 1;
+	}
+
         printf( "open, w: %d\n", ret );
 	Close(socket);
         return;
@@ -49,8 +53,10 @@ void ReadHandler( void *ev ) {
 
 	ret = Write( socket, event->write_buffer, event->write_size );
 
-	if (ret>0)
-	bLedOpen = 0;
+	if (ret > 0) {
+		struct Task *task = &(thread_reactor.tasks[kTypeLed]);
+		task->enable = 0;
+	}
         printf( "close, w: %d\n", ret );
 
 	Close(socket);

@@ -1,8 +1,8 @@
 #ifndef LED_H_
 #define LED_H_
 
-extern int LedTask( struct Task* );
-extern int LedInit( struct Task* );
+//int LedInit( struct Task* task);
+//int LedTask( struct Task* task);
 
 
 #endif /* LED_H_ */

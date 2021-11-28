@@ -17,6 +17,8 @@
 extern struct Reactor reactor;
 extern struct Reactor thread_reactor;
 
+extern int LedInit( struct Task* task);
+extern int LedTask( struct Task* task);
 
 void *ThreadRun( void *arg ) {
     struct Reactor *thread_reactor = ( struct Reactor * )arg;
@@ -27,10 +29,12 @@ void InitThreadReactor( ) {
     ReactorInit( &thread_reactor );
 
     struct Task task;
-    task.handler  = LedTask;
     task.Init     = LedInit;
-    task.delay_ms = 100;
-    task.enable   = 1;
+    task.handler  = LedTask;
+    task.delay_ms = 500;
+    task.enable   = 0;
+    task.init_enable   = 0;
+    task.type   = kTypeLed;
 
     AddTask( &thread_reactor, &task );
 
