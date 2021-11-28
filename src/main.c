@@ -17,8 +17,8 @@
 extern struct Reactor reactor;
 extern struct Reactor thread_reactor;
 
-extern int LedInit( struct Task* task);
-extern int LedTask( struct Task* task);
+extern int LedInit( struct Task *task );
+extern int LedTask( struct Task *task );
 
 void *ThreadRun( void *arg ) {
     struct Reactor *thread_reactor = ( struct Reactor * )arg;
@@ -29,12 +29,12 @@ void InitThreadReactor( ) {
     ReactorInit( &thread_reactor );
 
     struct Task task;
-    task.Init     = LedInit;
-    task.handler  = LedTask;
-    task.delay_ms = 500;
-    task.enable   = 0;
-    task.init_enable   = 0;
-    task.type   = kTypeLed;
+    task.Init        = LedInit;
+    task.handler     = LedTask;
+    task.delay_ms    = 500;
+    task.enable      = 0;
+    task.init_enable = 0;
+    task.type        = kTypeLed;
 
     AddTask( &thread_reactor, &task );
 
@@ -67,7 +67,8 @@ int main( int argc, char *argv[] ) {
     event.socket_ptr   = listen;
     event.fd           = listen->fd_;
 
-    ret = AddEvent( &reactor, &event, EPOLLIN | EPOLLET );
+    ret =
+        AddEvent( &reactor, &event, EPOLLIN | EPOLLET | EPOLLERR | EPOLLRDHUP );
     printf( "AddEvent: %d \n", ret );
 
     RunReactor( &reactor );
