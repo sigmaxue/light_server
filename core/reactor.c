@@ -60,5 +60,6 @@ int RunReactor( struct Reactor* reactor ) {
         }
     }
 
+    free(events);
     return 0;
 }

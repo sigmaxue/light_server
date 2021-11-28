@@ -29,18 +29,23 @@ void ReadHandler( void *ev ) {
 
     ret = strstr( event->read_buffer, "open" );
     if ( ret != 0 ) {
-        printf( "open\n" );
 
         memcpy( event->write_buffer, kRsp200, strlen( kRsp200 ) );
         event->write_size = strlen( kRsp200 );
+
+	ret = Write( socket, event->write_buffer, event->write_size );
+	
+        printf( "open, w: %d\n", ret );
         return;
     }
     ret = strstr( event->read_buffer, "close" );
     if ( ret != 0 ) {
-        printf( "close\n" );
-
         memcpy( event->write_buffer, kRsp200, strlen( kRsp200 ) );
         event->write_size = strlen( kRsp200 );
+
+	ret = Write( socket, event->write_buffer, event->write_size );
+
+        printf( "close, w: %d\n", ret );
         return;
     }
 }
@@ -56,6 +61,7 @@ void WriteHandler( void *ev ) {
 }
 
 void CloseHandler( void *ev ) {
+    printf( "%s\n", __FUNCTION__ );
     struct BaseEvent *event = ( struct BaseEvent * )ev;
     free( event->socket_ptr );
 }
@@ -76,21 +82,22 @@ void ListenReadHandler( void *ev ) {
     client->fd_ = fd;
 
     printf( "Accept fd:%d\n", client->fd_ );
-    struct BaseEvent event;
-    event.ReadHandler           = ReadHandler;
-    event.WriteHandler          = WriteHandler;
-    event.CloseHandler          = CloseHandler;
-    event.socket_ptr            = client;
-    event.fd                    = client->fd_;
-    event.read_buffer           = malloc( kBufferSize );
-    event.read_size             = 0;
-    event.read_buffer_max_size  = kBufferSize;
-    event.write_buffer          = malloc( kBufferSize );
-    event.write_size            = 0;
-    event.write_buffer_max_size = kBufferSize;
+    struct BaseEvent* event = 
+        ( struct BaseEvent * )malloc( sizeof( struct BaseEvent ) );
+    event->ReadHandler           = ReadHandler;
+    event->WriteHandler          = WriteHandler;
+    event->CloseHandler          = CloseHandler;
+    event->socket_ptr            = client;
+    event->fd                    = client->fd_;
+    event->read_buffer           = malloc( kBufferSize );
+    event->read_size             = 0;
+    event->read_buffer_max_size  = kBufferSize;
+    event->write_buffer          = malloc( kBufferSize );
+    event->write_size            = 0;
+    event->write_buffer_max_size = kBufferSize;
 
-    int ret = AddEvent( &reactor, &event, EPOLLIN | EPOLLOUT );
-    printf("AddEvent: %d\n", ret);
+    int ret = AddEvent( &reactor, event, EPOLLIN | EPOLLOUT );
+    printf("AddEvent fd: %d %d\n", event->fd, ret);
 }
 
 void ListenWriteHandler( void *ev ) {
