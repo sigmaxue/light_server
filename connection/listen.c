@@ -7,6 +7,7 @@
 #include <sys/epoll.h>
 
 
+extern int bLedOpen;
 
 void ReadHandler( void *ev ) {
     printf( "%s\n", __FUNCTION__ );
@@ -35,7 +36,10 @@ void ReadHandler( void *ev ) {
 
 	ret = Write( socket, event->write_buffer, event->write_size );
 	
+	if (ret>0)
+		bLedOpen = 1;
         printf( "open, w: %d\n", ret );
+	Close(socket);
         return;
     }
     ret = strstr( event->read_buffer, "close" );
@@ -45,7 +49,11 @@ void ReadHandler( void *ev ) {
 
 	ret = Write( socket, event->write_buffer, event->write_size );
 
+	if (ret>0)
+	bLedOpen = 0;
         printf( "close, w: %d\n", ret );
+
+	Close(socket);
         return;
     }
 }
@@ -56,8 +64,10 @@ void WriteHandler( void *ev ) {
     struct Socket *   socket = ( struct Socket * )event->socket_ptr;
     int               ret    = 0;
 
-    ret = Write( socket, event->write_buffer, event->write_size );
-    Close( socket );
+    if (event->write_size != 0) {
+	    ret = Write( socket, event->write_buffer, event->write_size );
+	    printf( "Write %d\n", ret );
+    }
 }
 
 void CloseHandler( void *ev ) {
@@ -96,7 +106,7 @@ void ListenReadHandler( void *ev ) {
     event->write_size            = 0;
     event->write_buffer_max_size = kBufferSize;
 
-    int ret = AddEvent( &reactor, event, EPOLLIN | EPOLLOUT );
+    int ret = AddEvent( &reactor, event, EPOLLIN | EPOLLET );
     printf("AddEvent fd: %d %d\n", event->fd, ret);
 }
 

@@ -18,6 +18,11 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src SRCS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/core SRCS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/global SRCS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/connection SRCS)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/led SRCS)
 
 add_executable(${CMAKE_PROJECT_NAME} ${SRCS})
 
+target_link_libraries(${CMAKE_PROJECT_NAME} 
+pthread	
+wiringPi
+	)
