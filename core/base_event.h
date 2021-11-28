@@ -1,7 +1,7 @@
 #ifndef BASE_EVENT_H_
 #define BASE_EVENT_H_
 
-struct BaseEvent* base_event;
+struct BaseEvent;
 
 typedef void ( *Handler )( struct BaseEvent* base_event );
 

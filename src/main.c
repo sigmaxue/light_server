@@ -14,8 +14,9 @@
 extern struct Reactor reactor;
 
 int main( int argc, char *argv[] ) {
-    int listen_port = 8080;
+    int listen_port = 8081;
 
+    ReactorInit( &reactor );
     struct Socket *listen =
         ( struct Socket * )malloc( sizeof( struct Socket ) );
     int ret = ListenInit( listen, listen_port );
@@ -27,7 +28,8 @@ int main( int argc, char *argv[] ) {
     event.socket_ptr   = listen;
     event.fd           = listen->fd_;
 
-    AddEvent( &reactor, &event, EPOLLIN );
+    ret = AddEvent( &reactor, &event, EPOLLIN );
+    printf( "AddEvent: %d \n", ret );
 
     RunReactor( &reactor );
 

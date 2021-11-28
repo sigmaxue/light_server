@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.11)
 project(light_server)
 
 message(${PROJECT_BINARY_DIR})
@@ -6,8 +6,6 @@ message(${PROJECT_SOURCE_DIR})
 message(${CMAKE_SOURCE_DIR})
 message(${CMAKE_BINARY_DIR})
 message("PROJECT:"${CMAKE_PROJECT_NAME})
-
-
 
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})

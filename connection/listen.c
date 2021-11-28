@@ -9,11 +9,13 @@
 
 
 void ReadHandler( void *ev ) {
-    printf( "%s", __FUNCTION__ );
+    printf( "%s\n", __FUNCTION__ );
     struct BaseEvent *event  = ( struct BaseEvent * )ev;
     struct Socket *   socket = ( struct Socket * )event->socket_ptr;
     int               ret = Read( socket, event->read_buffer + event->read_size,
                     event->read_buffer_max_size );
+
+    printf( "socket: %d, read_size: %d\n", socket->fd_,ret);
     if ( ret < 0 ) {
         return;
     }
@@ -44,7 +46,7 @@ void ReadHandler( void *ev ) {
 }
 
 void WriteHandler( void *ev ) {
-    printf( "%s", __FUNCTION__ );
+    printf( "%s\n", __FUNCTION__ );
     struct BaseEvent *event  = ( struct BaseEvent * )ev;
     struct Socket *   socket = ( struct Socket * )event->socket_ptr;
     int               ret    = 0;
@@ -60,7 +62,7 @@ void CloseHandler( void *ev ) {
 
 
 void ListenReadHandler( void *ev ) {
-    printf( "%s", __FUNCTION__ );
+    printf( "%s\n", __FUNCTION__ );
     struct BaseEvent *event_listen = ( struct BaseEvent * )ev;
     struct Socket *   listen = ( struct Socket * )event_listen->socket_ptr;
 
@@ -73,6 +75,7 @@ void ListenReadHandler( void *ev ) {
         ( struct Socket * )malloc( sizeof( struct Socket ) );
     client->fd_ = fd;
 
+    printf( "Accept fd:%d\n", client->fd_ );
     struct BaseEvent event;
     event.ReadHandler           = ReadHandler;
     event.WriteHandler          = WriteHandler;
@@ -86,7 +89,8 @@ void ListenReadHandler( void *ev ) {
     event.write_size            = 0;
     event.write_buffer_max_size = kBufferSize;
 
-    AddEvent( &reactor, &event, EPOLLIN | EPOLLOUT );
+    int ret = AddEvent( &reactor, &event, EPOLLIN | EPOLLOUT );
+    printf("AddEvent: %d\n", ret);
 }
 
 void ListenWriteHandler( void *ev ) {
