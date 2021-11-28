@@ -9,24 +9,48 @@
 #include <netinet/in.h>
 #include <stdio.h>
 #include <sys/socket.h>
+#include <task/task.h>
 
-#include <sys/epoll.h>
 #include <pthread.h>
+#include <sys/epoll.h>
 
 extern struct Reactor reactor;
+extern struct Reactor thread_reactor;
+
+
+void *ThreadRun( void *arg ) {
+    struct Reactor *thread_reactor = ( struct Reactor * )arg;
+    RunReactor( thread_reactor );
+}
+
+void InitThreadReactor( ) {
+    ReactorInit( &thread_reactor );
+
+    struct Task task;
+    task.handler  = LedTask;
+    task.Init     = LedInit;
+    task.delay_ms = 100;
+    task.enable   = 1;
+
+    AddTask( &thread_reactor, &task );
+
+    int       ret = 0;
+    pthread_t tid;
+    ret = pthread_create( &tid, NULL, ThreadRun, &thread_reactor );
+    printf( "pthread_create: %d \n", ret );
+}
 
 int main( int argc, char *argv[] ) {
-	if (argc<2) {
-		printf("%s port\n", argv[0]);
-		return -1;
-	}
-    int listen_port = atoi(argv[1]);
+    if ( argc < 2 ) {
+        printf( "%s port\n", argv[ 0 ] );
+        return -1;
+    }
+
+    int listen_port = atoi( argv[ 1 ] );
+
+    InitThreadReactor( );
+
     int ret = 0;
-
-    pthread_t tid;
-    ret = pthread_create(&tid, NULL, led_loop, NULL);
-    printf( "pthread_create: %d \n", ret );
-
     ReactorInit( &reactor );
     struct Socket *listen =
         ( struct Socket * )malloc( sizeof( struct Socket ) );
@@ -45,5 +69,6 @@ int main( int argc, char *argv[] ) {
     RunReactor( &reactor );
 
     free( listen );
+
     return 0;
 }

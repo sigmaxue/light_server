@@ -2,14 +2,19 @@
 #include <core/base_event.h>
 #include <stdlib.h>
 #include <sys/epoll.h>
+#include <task/task.h>
 
 struct Reactor reactor;
+struct Reactor thread_reactor;
 
 void ReactorInit( struct Reactor* reactor ) {
     reactor->epoll_fd_         = epoll_create( 1024 );
     reactor->epoll_timeout_    = 100;
     reactor->max_epoll_events_ = 1024;
+    reactor->tasks =
+        ( struct Task* )malloc( sizeof( struct Task ) * kReactorMaxTaskNum );
 }
+
 
 int AddEvent( struct Reactor*   reactor,
               struct BaseEvent* base_event,
@@ -33,12 +38,46 @@ int AddEvent( struct Reactor*   reactor,
     return 0;
 }
 
+
+int AddTask( struct Reactor* reactor, struct Task* task ) {
+    reactor->tasks[ reactor->task_num++ ] = *task;
+    return 0;
+}
+
+int InitTasks( struct Reactor* reactor ) {
+    int i = 0;
+    for ( i = 0; i < reactor->task_num; i++ ) {
+        if ( !reactor->tasks[ i ].enable ) {
+            continue;
+        }
+        struct Task* task = &reactor->tasks[ i ];
+        task->Init( task );
+    }
+    return 0;
+}
+
+int RunTasks( struct Reactor* reactor ) {
+    int i = 0;
+    for ( i = 0; i < reactor->task_num; i++ ) {
+        if ( !reactor->tasks[ i ].enable ) {
+            continue;
+        }
+        struct Task* task = &reactor->tasks[ i ];
+        task->handler( task );
+    }
+
+    return 0;
+}
+
 int RunReactor( struct Reactor* reactor ) {
     printf( "Reactor: %s\n", __FUNCTION__ );
     struct epoll_event* events = ( struct epoll_event* )malloc(
         sizeof( struct epoll_event ) * reactor->max_epoll_events_ );
 
+    InitTasks( reactor );
     while ( 1 ) {
+        RunTasks( reactor );
+
         int i = 0;
         int ret =
             epoll_wait( reactor->epoll_fd_, events, reactor->max_epoll_events_,
@@ -60,6 +99,6 @@ int RunReactor( struct Reactor* reactor ) {
         }
     }
 
-    free(events);
+    free( events );
     return 0;
 }

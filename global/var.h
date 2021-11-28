@@ -6,6 +6,8 @@ extern const int   kIOErrorTryAgain;
 extern const int   kIOErrorEAGAIN;
 extern const int   kIOErrorFatal;
 extern const int   kBufferSize;
+extern const int   kReactorMaxTaskNum;
 extern const char* kRsp200;
 
+extern const int kTypeLed;
 #endif /* VAR_H_ */

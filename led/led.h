@@ -1,3 +1,8 @@
-extern int bLedOpen;
-extern int RunLedLoop();
-void *led_loop(void *vargp);   /* thread routine */
+#ifndef LED_H_
+#define LED_H_
+
+extern int LedTask( struct Task* );
+extern int LedInit( struct Task* );
+
+
+#endif /* LED_H_ */
