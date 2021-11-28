@@ -3,6 +3,9 @@
 #include "stdio.h"
 #include "wiringPi.h"
 
+#include <global/var.h>
+#include <task/task.h>
+
 const int kRedLedPin   = 0;
 const int kGreenLedPin = 1;
 
@@ -17,11 +20,12 @@ void SetLedColor( char r, char g ) {
     softPwmWrite( kGreenLedPin, g );
 }
 
-void LedInit( struct Task *task ) {
+int LedInit( struct Task *task ) {
     if ( wiringPiSetup( ) == -1 ) {
         printf( "init error" );
-        return 1;
+        return -1;
     }
+
     InitRedLed( );
 
     task->type        = kTypeLed;

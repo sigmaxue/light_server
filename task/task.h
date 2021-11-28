@@ -3,7 +3,7 @@
 
 #include <global/var.h>
 
-typedef void ( *TaskHandler )( struct Task* );
+typedef int ( *TaskHandler )( struct Task* );
 struct Task {
     int         type;
     int         delay_ms;
