@@ -58,13 +58,22 @@ int AddEvent( struct Reactor*   reactor,
     return 0;
 }
 
-int AddTask( struct Reactor* reactor, struct Task* task ) {
+int AddTask( struct Reactor* reactor, struct Task** task ) {
     if ( reactor->task_num >= kReactorMaxTaskNum ) {
         return -1;
     }
 
-    reactor->tasks[ reactor->task_num++ ] = *task;
-    return 0;
+    int i = 0;
+    for ( i = 0; i < reactor->task_num + 1; i++ ) {
+        if ( reactor->tasks[ i ].enable == 0 ) {
+            *task           = &reactor->task[ i ];
+            ( *task->type ) = i;
+            reactor->task_num++;
+            return 0;
+        }
+    }
+
+    return -1;
 }
 
 
@@ -92,7 +101,7 @@ int RunTasks( struct Reactor* reactor ) {
             task->enable = 0;
         }
 
-        printf( "RunTasks ret: %d\n", ret );
+        // printf( "RunTasks ret: %d\n", ret );
     }
 
     return 0;

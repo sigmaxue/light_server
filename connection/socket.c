@@ -23,16 +23,15 @@ void ReadHandler( void* ev ) {
     event->events |= ~EPOLLIN;
     int ret = ModifyEvent( event->reactor, event, event->events );
 
-    struct Task* task = ( struct Task* )malloc( sizeof( struct Task ) );
-    task->event       = event;
-    task->handler     = ConnectionRecv;
-    task->enable      = 1;
-
-    ret = AddTask( event->reactor, task );
+    struct Task* task;
+    ret = AddTask( event->reactor, &task );
     if ( ret < 0 ) {
         printf( "ReadHandler AddTask Failed: fd: %d, ret: %d", socket->fd_,
                 ret );
     }
+    task->event   = event;
+    task->handler = ConnectionRecv;
+    task->enable  = 1;
 
     printf( "%s, fd:%d AddTask: %d\n", __FUNCTION__, socket->fd_, ret );
 }
@@ -45,16 +44,15 @@ void WriteHandler( void* ev ) {
     event->events |= ~EPOLLOUT;
     ret = ModifyEvent( event->reactor, event, event->events );
 
-    struct Task* task = ( struct Task* )malloc( sizeof( struct Task ) );
-    task->event       = event;
-    task->handler     = ConnectionSend;
-    task->enable      = 1;
-
-    ret = AddTask( event->reactor, task );
+    struct Task* task;
+    ret = AddTask( event->reactor, &task );
     if ( ret < 0 ) {
         printf( "WriteHandler AddTask Failed: fd: %d, ret: %d", socket->fd_,
                 ret );
     }
+    task->event   = event;
+    task->handler = ConnectionSend;
+    task->enable  = 1;
     printf( "%s, fd:%d AddTask: %d\n", __FUNCTION__, socket->fd_, ret );
 }
 

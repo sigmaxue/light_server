@@ -86,7 +86,6 @@ int ConnectionSend( struct Task *task ) {
         }
 
         if ( ret == kIOErrorEAGAIN ) {
-            // 空设置epollin
             event->events |= EPOLLOUT;
             ret = ModifyEvent( reactor, event, event->events );
             return ret;

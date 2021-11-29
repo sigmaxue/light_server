@@ -28,16 +28,22 @@ void *ThreadRun( void *arg ) {
 void InitThreadReactor( ) {
     ReactorInit( &thread_reactor );
 
-    kTypeLed = thread_reactor.task_num;
-    struct Task task;
-    task.Init        = LedInit;
-    task.handler     = LedTask;
-    task.delay_ms    = 500;
-    task.enable      = 0;
-    task.init_enable = 0;
-    task.type        = kTypeLed;
 
-    AddTask( &thread_reactor, &task );
+    struct Task *task;
+
+    int ret = AddTask( &thread_reactor, &task );
+    if ( ret < 0 ) {
+        return;
+    }
+
+    task->Init        = LedInit;
+    task->handler     = LedTask;
+    task->delay_ms    = 500;
+    task->enable      = 0;
+    task->init_enable = 0;
+    kTypeLed          = task->type;
+
+
 
     int       ret = 0;
     pthread_t tid;

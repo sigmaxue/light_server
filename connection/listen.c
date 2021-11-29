@@ -24,6 +24,8 @@ void ListenReadHandler( void *ev ) {
     client->fd_ = fd;
 
     printf( "Accept fd:%d\n", client->fd_ );
+
+    // socket reuse not free
     struct BaseEvent *event =
         ( struct BaseEvent * )malloc( sizeof( struct BaseEvent ) );
     event->reactor                = event_listen->reactor;
