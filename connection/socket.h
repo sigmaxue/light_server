@@ -1,14 +1,15 @@
 #ifndef SOCKET_H_
 #define SOCKET_H_
+#include <global/var.h>
 
 struct Socket {
-    int   fd_;
-    void* read_buffer;
-    int   read_size;
-    int   read_buffer_max_size;
-    void* write_buffer;
-    int   write_buffer_max_size;
-    int   write_size;
+    int  fd_;
+    char read_buffer[ kBufferSize ];
+    int  read_size;
+    int  read_buffer_max_size;
+    char write_buffer[ kBufferSize ];
+    int  write_buffer_max_size;
+    int  write_size;
 };
 
 void ReadHandler( void* ev );

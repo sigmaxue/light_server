@@ -20,7 +20,8 @@ extern struct Reactor thread_reactor;
 extern int LedInit( struct Task *task );
 extern int LedTask( struct Task *task );
 
-void *ThreadRun( void *arg ) {
+struct BaseEvent *led_ev;
+void *            ThreadRun( void *arg ) {
     struct Reactor *thread_reactor = ( struct Reactor * )arg;
     RunReactor( thread_reactor );
 }
@@ -28,24 +29,24 @@ void *ThreadRun( void *arg ) {
 void InitThreadReactor( ) {
     ReactorInit( &thread_reactor );
 
+    struct BaseEvent *task = malloc( sizeof( struct BaseEvent ) );
 
-    struct Task *task;
+    task->task.Init            = LedInit;
+    task->task.handler         = LedTask;
+    task->task.ContinueHandler = LedTask;
+    task->task.delay_ms        = 500;
+    task->task.enable          = 0;
+    task->task.init_enable     = 0;
+    task->task.type            = kTypeLed;
 
-    int ret = AddTask( &thread_reactor, &task );
+
+    int ret = AddTask( &thread_reactor, task );
     if ( ret < 0 ) {
         return;
     }
+    led_ev = task;
 
-    task->Init        = LedInit;
-    task->handler     = LedTask;
-    task->delay_ms    = 500;
-    task->enable      = 0;
-    task->init_enable = 0;
-    kTypeLed          = task->type;
-
-
-
-    int       ret = 0;
+    ret = 0;
     pthread_t tid;
     ret = pthread_create( &tid, NULL, ThreadRun, &thread_reactor );
     printf( "pthread_create: %d \n", ret );

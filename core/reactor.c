@@ -12,8 +12,6 @@ void ReactorInit( struct Reactor* reactor ) {
     reactor->epoll_timeout_    = 100;
     reactor->max_epoll_events_ = 1024;
     reactor->task_num          = 0;
-    reactor->tasks =
-        ( struct Task* )malloc( sizeof( struct Task ) * kReactorMaxTaskNum );
 }
 
 int ModifyEvent( struct Reactor*   reactor,
@@ -58,50 +56,76 @@ int AddEvent( struct Reactor*   reactor,
     return 0;
 }
 
-int AddTask( struct Reactor* reactor, struct Task** task ) {
+int DelEvent( struct Reactor* reactor, struct BaseEvent* base_event ) {
+    printf( "Reactor: %s\n", __FUNCTION__ );
+    struct epoll_event epoll_event;
+    epoll_event.data.ptr = ( void* )base_event;
+
+    int fd = base_event->fd;
+    if ( epoll_ctl( reactor->epoll_fd_, EPOLL_CTL_DEL, fd, &epoll_event ) <
+         0 ) {
+        return -1;
+    }
+
+    return 0;
+}
+
+int AddTask( struct Reactor* reactor, struct BaseEvent* task ) {
     if ( reactor->task_num >= kReactorMaxTaskNum ) {
         return -1;
     }
 
-    int i = 0;
-    for ( i = 0; i < reactor->task_num + 1; i++ ) {
-        if ( reactor->tasks[ i ].enable == 0 ) {
-            *task           = &reactor->task[ i ];
-            ( *task->type ) = i;
-            reactor->task_num++;
-            return 0;
-        }
+    if ( reactor->tasks_tail == 0 ) {
+        reactor->tasks_tail = task;
+        reactor->tasks_head = task;
+    } else {
+        reactor->tasks_tail->next = task;
+        reactor->tasks_tail       = task;
     }
+    reactor->task_num++;
 
-    return -1;
+    return 0;
 }
 
 
 int InitTasks( struct Reactor* reactor ) {
-    int i = 0;
-    for ( i = 0; i < reactor->task_num; i++ ) {
-        struct Task* task = &reactor->tasks[ i ];
-        task->Init( task );
+    struct BaseEvent* handle = reactor->tasks_head;
+    while ( handle ) {
+        handle->task.Init( handle );
+        handle = handle->next;
     }
+
     return 0;
 }
 
 int RunTasks( struct Reactor* reactor ) {
-    int i   = 0;
     int ret = 0;
+    int i   = 0;
 
-    for ( i = 0; i < reactor->task_num; i++ ) {
-        if ( !reactor->tasks[ i ].enable ) {
-            continue;
+    struct BaseEvent* handle = reactor->tasks_head;
+    struct BaseEvent* tmp;
+    for ( i = 0; i < kReactorMaxTaskNum; i++ ) {
+        if ( !handle ) {
+            break;
         }
-        struct Task* task = &reactor->tasks[ i ];
+        tmp                 = handle;
+        handle              = handle->next;
+        reactor->tasks_head = handle;
+        reactor->task_num--;
 
-        ret = task->handler( task );
-        if ( ret < 0 ) {
-            task->enable = 0;
+        ret = tmp->task.handler( handle );
+        if ( ret == kTaskContinue ) {
+            if ( tmp->task.ContinueHandler )
+                tmp->task.ContinueHandler( tmp );
         }
 
-        // printf( "RunTasks ret: %d\n", ret );
+        if ( ret == kTaskFinish ) {
+            if ( tmp->task.FinishHandler ) {
+                tmp->task.FinishHandler( tmp );
+            } else {
+                free( tmp );
+            }
+        }
     }
 
     return 0;

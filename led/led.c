@@ -1,7 +1,7 @@
-#include <led/led.h>
 #include "softPwm.h"
 #include "stdio.h"
 #include "wiringPi.h"
+#include <led/led.h>
 
 #include <global/var.h>
 #include <task/task.h>
@@ -19,7 +19,7 @@ void SetLedColor( char r, char g ) {
     softPwmWrite( kGreenLedPin, g );
 }
 
-int LedInit( struct Task *task ) {
+int LedInit( struct BaseEvent *task ) {
     if ( wiringPiSetup( ) == -1 ) {
         printf( "init error" );
         return -1;
@@ -27,32 +27,32 @@ int LedInit( struct Task *task ) {
 
     InitRedLed( );
 
-    task->type        = kTypeLed;
-    task->init_enable = 1;
+    task->task.type        = kTypeLed;
+    task->task.init_enable = 1;
 
     printf( "%s", __FUNCTION__ );
     return 1;
 }
 
 
-int LedTask( struct Task *task ) {
-    if ( !task->init_enable )
-        return -1;
-    if ( !task->enable )
-        return -1;
+int LedTask( struct BaseEvent *task ) {
+    if ( !task->task.init_enable )
+        return kTaskFinish;
+    if ( !task->task.enable )
+        return kTaskContinue;
 
     SetLedColor( 0xff, 0x00 );
-    delay( task->delay_ms );
+    delay( task->task.delay_ms );
     SetLedColor( 0x00, 0xff );
-    delay( task->delay_ms );
+    delay( task->task.delay_ms );
     SetLedColor( 0xff, 0x45 );
-    delay( task->delay_ms );
+    delay( task->task.delay_ms );
     SetLedColor( 0xff, 0xff );
-    delay( task->delay_ms );
+    delay( task->task.delay_ms );
     SetLedColor( 0x7c, 0xfc );
-    delay( task->delay_ms );
+    delay( task->task.delay_ms );
     SetLedColor( 0x00, 0x00 );
-    delay( task->delay_ms );
+    delay( task->task.delay_ms );
 
-    return 1;
+    return kTaskContinue;
 }

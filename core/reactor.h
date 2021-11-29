@@ -10,8 +10,9 @@ struct Reactor {
     int epoll_fd_;
     int max_epoll_events_;
 
-    struct Task* tasks;
-    int          task_num;
+    struct BaseEvent* tasks_head;
+    struct BaseEvent* tasks_tail;
+    int               task_num;
 };
 
 void ReactorInit( struct Reactor* reactor );

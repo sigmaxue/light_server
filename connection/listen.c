@@ -28,19 +28,18 @@ void ListenReadHandler( void *ev ) {
     // socket reuse not free
     struct BaseEvent *event =
         ( struct BaseEvent * )malloc( sizeof( struct BaseEvent ) );
-    event->reactor                = event_listen->reactor;
-    event->ReadHandler            = ReadHandler;
-    event->WriteHandler           = WriteHandler;
-    event->CloseHandler           = CloseHandler;
-    event->socket_ptr             = client;
-    event->fd                     = client->fd_;
-    client->read_buffer           = malloc( kBufferSize );
+    event->reactor      = event_listen->reactor;
+    event->ReadHandler  = ReadHandler;
+    event->WriteHandler = WriteHandler;
+    event->CloseHandler = CloseHandler;
+    event->socket_ptr   = client;
+    event->fd           = client->fd_;
+    event->events       = EPOLLIN | EPOLLET | EPOLLERR | EPOLLRDHUP;
+
     client->read_size             = 0;
     client->read_buffer_max_size  = kBufferSize;
-    client->write_buffer          = malloc( kBufferSize );
     client->write_size            = 0;
     client->write_buffer_max_size = kBufferSize;
-    event->events                 = EPOLLIN | EPOLLET | EPOLLERR | EPOLLRDHUP;
 
     int ret = AddEvent( &reactor, event, event->events );
     printf( "AddEvent fd: %d %d\n", event->fd, ret );
@@ -52,6 +51,8 @@ void ListenWriteHandler( void *ev ) {
 
 void ListenCloseHandler( void *ev ) {
     struct BaseEvent *event = ( struct BaseEvent * )ev;
+    DelEvent( event->reactor, ev );
     Close( event->fd );
     free( event->socket_ptr );
+    free( event );
 }

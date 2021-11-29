@@ -11,10 +11,9 @@
 #include <sys/socket.h>
 #include <task/task.h>
 
-extern int ConnectionRecv( struct Task* task );
-extern int ConnectionSend( struct Task* task );
-
-
+extern int ConnectionRecv( struct BaseEvent* task );
+extern int ConnectionSend( struct BaseEvent* task );
+extern int ContinueRun( struct BaseEvent* task );
 
 void ReadHandler( void* ev ) {
     struct BaseEvent* event  = ( struct BaseEvent* )ev;
@@ -23,17 +22,25 @@ void ReadHandler( void* ev ) {
     event->events |= ~EPOLLIN;
     int ret = ModifyEvent( event->reactor, event, event->events );
 
-    struct Task* task;
-    ret = AddTask( event->reactor, &task );
-    if ( ret < 0 ) {
-        printf( "ReadHandler AddTask Failed: fd: %d, ret: %d", socket->fd_,
-                ret );
+    if ( event->task.task_state == kTaskClose ||
+         kTaskFinish == event->task.task_state ) {
+        return;
     }
-    task->event   = event;
-    task->handler = ConnectionRecv;
-    task->enable  = 1;
 
-    printf( "%s, fd:%d AddTask: %d\n", __FUNCTION__, socket->fd_, ret );
+    ConnectionRecv( event );
+
+    if ( event->task.task_state == kTaskClose ) {
+        event->task.event           = event;
+        event->task.ContinueHandler = ContinueRun;
+        event->task.enable          = 1;
+
+        ret = AddTask( event->reactor, event );
+        if ( ret < 0 ) {
+            printf( "ReadHandler AddTask Failed: fd: %d, ret: %d", socket->fd_,
+                    ret );
+        }
+        printf( "%s, fd:%d AddTask: %d\n", __FUNCTION__, socket->fd_, ret );
+    }
 }
 
 void WriteHandler( void* ev ) {
@@ -44,16 +51,26 @@ void WriteHandler( void* ev ) {
     event->events |= ~EPOLLOUT;
     ret = ModifyEvent( event->reactor, event, event->events );
 
-    struct Task* task;
-    ret = AddTask( event->reactor, &task );
-    if ( ret < 0 ) {
-        printf( "WriteHandler AddTask Failed: fd: %d, ret: %d", socket->fd_,
-                ret );
+    if ( event->task.task_state == kTaskClose ||
+         kTaskFinish == event->task.task_state ) {
+        return;
     }
-    task->event   = event;
-    task->handler = ConnectionSend;
-    task->enable  = 1;
-    printf( "%s, fd:%d AddTask: %d\n", __FUNCTION__, socket->fd_, ret );
+
+    ConnectionSend( event );
+
+    if ( event->task.task_state == kTaskClose ) {
+        event->task.event           = event;
+        event->task.event           = event;
+        event->task.ContinueHandler = ContinueRun;
+        event->task.enable          = 1;
+
+        ret = AddTask( event->reactor, event );
+        if ( ret < 0 ) {
+            printf( "WriteHandler AddTask Failed: fd: %d, ret: %d", socket->fd_,
+                    ret );
+        }
+        printf( "%s, fd:%d AddTask: %d\n", __FUNCTION__, socket->fd_, ret );
+    }
 }
 
 void CloseHandler( void* ev ) {
@@ -61,10 +78,21 @@ void CloseHandler( void* ev ) {
     struct Socket*    socket = ( struct Socket* )event->socket_ptr;
 
     printf( "%s, fd: %d\n", __FUNCTION__, socket->fd_ );
+    event->task.task_state = kTaskClose;
+    int ret                = 0;
 
-    Close( socket );
-    free( event->socket_ptr );
-    free( event );
+    if ( event->task.task_state == kTaskClose ) {
+        event->task.event           = event;
+        event->task.ContinueHandler = ContinueRun;
+        event->task.enable          = 1;
+
+        ret = AddTask( event->reactor, event );
+        if ( ret < 0 ) {
+            printf( "ReadHandler AddTask Failed: fd: %d, ret: %d", socket->fd_,
+                    ret );
+        }
+        printf( "%s, fd:%d AddTask: %d\n", __FUNCTION__, socket->fd_, ret );
+    }
 }
 
 int ListenInit( struct Socket* so, int port ) {
