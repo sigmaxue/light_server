@@ -11,12 +11,9 @@ struct BaseEvent {
     Handler CloseHandler;
     int     fd;
     void*   socket_ptr;
-    void*   read_buffer;
-    int     read_size;
-    int     read_buffer_max_size;
-    void*   write_buffer;
-    int     write_buffer_max_size;
-    int     write_size;
+    // global arg
+    int             events;
+    struct Reactor* reactor;
 };
 
 #endif /* BASE_EVENT_H_ */

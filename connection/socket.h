@@ -2,8 +2,18 @@
 #define SOCKET_H_
 
 struct Socket {
-    int fd_;
+    int   fd_;
+    void* read_buffer;
+    int   read_size;
+    int   read_buffer_max_size;
+    void* write_buffer;
+    int   write_buffer_max_size;
+    int   write_size;
 };
+
+void ReadHandler( void* ev );
+void WriteHandler( void* ev );
+void CloseHandler( void* ev );
 
 int Init( struct Socket* socket );
 

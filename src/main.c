@@ -28,6 +28,7 @@ void *ThreadRun( void *arg ) {
 void InitThreadReactor( ) {
     ReactorInit( &thread_reactor );
 
+    kTypeLed = thread_reactor.task_num;
     struct Task task;
     task.Init        = LedInit;
     task.handler     = LedTask;
@@ -66,6 +67,7 @@ int main( int argc, char *argv[] ) {
     event.CloseHandler = ListenCloseHandler;
     event.socket_ptr   = listen;
     event.fd           = listen->fd_;
+    event.reactor      = &reactor;
 
     ret =
         AddEvent( &reactor, &event, EPOLLIN | EPOLLET | EPOLLERR | EPOLLRDHUP );

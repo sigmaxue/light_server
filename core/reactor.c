@@ -15,6 +15,25 @@ void ReactorInit( struct Reactor* reactor ) {
         ( struct Task* )malloc( sizeof( struct Task ) * kReactorMaxTaskNum );
 }
 
+int ModifyEvent( struct Reactor*   reactor,
+                 struct BaseEvent* base_event,
+                 int               events ) {
+    struct epoll_event epoll_event;
+    epoll_event.data.ptr = ( void* )base_event;
+    if ( events != 0 ) {
+        epoll_event.events = events | EPOLLET;
+    } else {
+        epoll_event.events =
+            EPOLLIN | EPOLLOUT | EPOLLET | EPOLLERR | EPOLLRDHUP;
+    }
+
+    int fd = base_event->fd;
+    if ( epoll_ctl( reactor->epoll_fd_, EPOLL_CTL_MOD, fd, &epoll_event ) <
+         0 ) {
+        return -1;
+    }
+    return 0;
+}
 
 int AddEvent( struct Reactor*   reactor,
               struct BaseEvent* base_event,
@@ -40,9 +59,11 @@ int AddEvent( struct Reactor*   reactor,
 
 
 int AddTask( struct Reactor* reactor, struct Task* task ) {
-    reactor->tasks[ reactor->task_num ] = *task;
-    kTypeLed = reactor->task_num ++;
-    task->type = kTypeLed;
+    if ( reactor->task_num >= kReactorMaxTaskNum ) {
+        return -1;
+    }
+
+    reactor->tasks[ reactor->task_num++ ] = *task;
     return 0;
 }
 
@@ -56,13 +77,17 @@ int InitTasks( struct Reactor* reactor ) {
 }
 
 int RunTasks( struct Reactor* reactor ) {
-    int i = 0;
+    int i   = 0;
+    int ret = 0;
+
     for ( i = 0; i < reactor->task_num; i++ ) {
         if ( !reactor->tasks[ i ].enable ) {
             continue;
         }
         struct Task* task = &reactor->tasks[ i ];
-        task->handler( task );
+
+        ret = task->handler( task );
+        printf( "task ret: %d\n", ret );
     }
 
     return 0;

@@ -1,13 +1,71 @@
 #include "socket.h"
 
 #include <arpa/inet.h>
+#include <connection/connection.h>
+#include <core/base_event.h>
 #include <errno.h>
 #include <global/var.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <sys/epoll.h>
 #include <sys/socket.h>
+#include <task/task.h>
+
+extern int ConnectionRecv( struct Task* task );
+extern int ConnectionSend( struct Task* task );
 
 
+
+void ReadHandler( void* ev ) {
+    struct BaseEvent* event  = ( struct BaseEvent* )ev;
+    struct Socket*    socket = ( struct Socket* )event->socket_ptr;
+
+    printf( "%s, fd:%d \n", __FUNCTION__, socket->fd_ );
+    event->events |= ~EPOLLIN;
+    int ret = ModifyEvent( event->reactor, event, event->events );
+
+    struct Task* task = ( struct Task* )malloc( sizeof( struct Task ) );
+    task->event       = event;
+    task->handler     = ConnectionRecv;
+
+    ret = AddTask( event->reactor, task );
+    if ( ret < 0 ) {
+        printf( "ReadHandler AddTask Failed: fd: %d, ret: %d", socket->fd_,
+                ret );
+    }
+}
+
+void WriteHandler( void* ev ) {
+    struct BaseEvent* event  = ( struct BaseEvent* )ev;
+    struct Socket*    socket = ( struct Socket* )event->socket_ptr;
+    int               ret    = 0;
+
+    printf( "%s, fd:%d \n", __FUNCTION__, socket->fd_ );
+
+    event->events |= ~EPOLLOUT;
+    ret = ModifyEvent( event->reactor, event, event->events );
+
+    struct Task* task = ( struct Task* )malloc( sizeof( struct Task ) );
+    task->event       = event;
+    task->handler     = ConnectionSend;
+
+    ret = AddTask( event->reactor, task );
+    if ( ret < 0 ) {
+        printf( "WriteHandler AddTask Failed: fd: %d, ret: %d", socket->fd_,
+                ret );
+    }
+}
+
+void CloseHandler( void* ev ) {
+    struct BaseEvent* event  = ( struct BaseEvent* )ev;
+    struct Socket*    socket = ( struct Socket* )event->socket_ptr;
+
+    printf( "%s, fd: %d\n", __FUNCTION__, socket->fd_ );
+
+    Close( socket );
+    free( event->socket_ptr );
+    free( event );
+}
 
 int ListenInit( struct Socket* so, int port ) {
     int ret = 0;
