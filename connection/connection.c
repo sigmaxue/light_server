@@ -9,6 +9,15 @@
 
 extern struct Reactor thread_reactor;
 
+int ConnectionClose( struct Task *task ) {
+    struct BaseEvent *event  = ( struct BaseEvent * )task->event;
+    struct Socket *   socket = ( struct Socket * )event->socket_ptr;
+
+    Close( socket );
+
+    return 0;
+}
+
 int CheckComplete( char *buffer, int size ) {
     char *ret = strstr( buffer, "\r\n\r\n" );
     if ( ret == 0 ) {
@@ -20,13 +29,19 @@ int CheckComplete( char *buffer, int size ) {
 int ConnectionRecv( struct Task *task ) {
     struct BaseEvent *event  = ( struct BaseEvent * )task->event;
     struct Socket *   socket = ( struct Socket * )event->socket_ptr;
+
+    printf( "%s, fd:%d \n", __FUNCTION__, socket->fd_ );
+    if ( socket->fd_ == 0 ) {
+        return -1;
+    }
+
     int ret = Read( socket, socket->read_buffer + socket->read_size,
                     socket->read_buffer_max_size - socket->read_size );
 
 
-    if ( ret == kIOErrorClose || kIOErrorFatal ) {
+    if ( ret == kIOErrorClose || ret == kIOErrorFatal ) {
         Close( socket );
-        return;
+        return -1;
     }
 
     if ( ret == kIOErrorEAGAIN ) {
@@ -38,6 +53,7 @@ int ConnectionRecv( struct Task *task ) {
 
     socket->read_size += ret;
 
+    printf( "%s fd: %d %d\n", __FUNCTION__, event->fd, ret );
     // check complete
     if ( ( ret = CheckComplete( socket->read_buffer, socket->read_size ) ) >
          0 ) {
@@ -58,12 +74,13 @@ int ConnectionRecv( struct Task *task ) {
 int ConnectionSend( struct Task *task ) {
     struct BaseEvent *event  = ( struct BaseEvent * )task->event;
     struct Socket *   socket = ( struct Socket * )event->socket_ptr;
-
-
-    int ret = 0;
+    if ( socket->fd_ == 0 ) {
+        return -1;
+    }
+    int ret = -1;
     if ( socket->write_size != 0 ) {
         ret = Write( socket, socket->write_buffer, socket->write_size );
-        if ( ret == kIOErrorClose || kIOErrorFatal ) {
+        if ( ret == kIOErrorClose || ret == kIOErrorFatal ) {
             Close( socket );
             return ret;
         }
@@ -83,7 +100,11 @@ int ConnectionSend( struct Task *task ) {
                 memset( socket->write_buffer + socket->write_size, 0, ret );
             }
         }
+        if ( ret == 0 ) {
+            return -1;
+        }
     }
+    printf( "ConnectionSend: fd: %d, %d\n", task->event->fd, ret );
     return ret;
 }
 
@@ -95,7 +116,6 @@ int ConnectionWrite( struct Task *task, char *buffer, int size ) {
     socket->write_size = size;
 
     int ret = ConnectionSend( task );
-    printf( "ConnectionSend: fd: %d, %d\n", task->event->fd, ret );
     return ret;
 }
 
@@ -105,9 +125,10 @@ int StartProcess( struct Task *task, char *buffer, int size ) {
     if ( ret != 0 ) {
         ret = ConnectionWrite( task, kRsp200, strlen( kRsp200 ) );
         if ( ret > 0 ) {
-            struct Task *task = &( thread_reactor.tasks[ kTypeLed ] );
-            task->enable      = 1;
+            struct Task *led_task = &( thread_reactor.tasks[ kTypeLed ] );
+            led_task->enable      = 1;
             printf( "opened, fd: %d\n", task->event->fd );
+            ConnectionClose( task );
         }
     }
 
@@ -115,9 +136,11 @@ int StartProcess( struct Task *task, char *buffer, int size ) {
     if ( ret != 0 ) {
         ret = ConnectionWrite( task, kRsp200, strlen( kRsp200 ) );
         if ( ret > 0 ) {
-            struct Task *task = &( thread_reactor.tasks[ kTypeLed ] );
-            task->enable      = 0;
+            struct Task *led_task = &( thread_reactor.tasks[ kTypeLed ] );
+            led_task->enable      = 0;
+
             printf( "closed, fd: %d\n", task->event->fd );
+            ConnectionClose( task );
         }
     }
     return 0;

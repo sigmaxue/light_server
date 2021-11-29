@@ -11,6 +11,7 @@ void ReactorInit( struct Reactor* reactor ) {
     reactor->epoll_fd_         = epoll_create( 1024 );
     reactor->epoll_timeout_    = 100;
     reactor->max_epoll_events_ = 1024;
+    reactor->task_num          = 0;
     reactor->tasks =
         ( struct Task* )malloc( sizeof( struct Task ) * kReactorMaxTaskNum );
 }
@@ -57,7 +58,6 @@ int AddEvent( struct Reactor*   reactor,
     return 0;
 }
 
-
 int AddTask( struct Reactor* reactor, struct Task* task ) {
     if ( reactor->task_num >= kReactorMaxTaskNum ) {
         return -1;
@@ -66,6 +66,7 @@ int AddTask( struct Reactor* reactor, struct Task* task ) {
     reactor->tasks[ reactor->task_num++ ] = *task;
     return 0;
 }
+
 
 int InitTasks( struct Reactor* reactor ) {
     int i = 0;
@@ -87,7 +88,11 @@ int RunTasks( struct Reactor* reactor ) {
         struct Task* task = &reactor->tasks[ i ];
 
         ret = task->handler( task );
-        printf( "task ret: %d\n", ret );
+        if ( ret < 0 ) {
+            task->enable = 0;
+        }
+
+        printf( "RunTasks ret: %d\n", ret );
     }
 
     return 0;
