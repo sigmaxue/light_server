@@ -81,6 +81,11 @@ int ConnectionRecv( struct BaseEvent *event ) {
             return kTaskHolding;
         }
 
+        if ( socket->read_buffer_max_size < socket->read_size + ret ) {
+            event->task.task_state = kTaskClose;
+            return kTaskContinue;
+        }
+
         socket->read_size += ret;
 
         printf( "%s fd: %d %d\n", __FUNCTION__, event->fd, ret );

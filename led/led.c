@@ -3,6 +3,7 @@
 #include "wiringPi.h"
 #include <led/led.h>
 
+#include <core/base_event.h>
 #include <global/var.h>
 #include <task/task.h>
 
@@ -17,6 +18,15 @@ void InitRedLed( ) {
 void SetLedColor( char r, char g ) {
     softPwmWrite( kRedLedPin, r );
     softPwmWrite( kGreenLedPin, g );
+}
+
+int LedContinueTask( struct BaseEvent *event ) {
+    int ret = AddTask( event->reactor, event );
+    if ( ret < 0 ) {
+        printf( "ReadHandler AddTask Failed: fd: %d, ret: %d", socket->fd_,
+                ret );
+    }
+    return ret;
 }
 
 int LedInit( struct BaseEvent *task ) {

@@ -28,13 +28,14 @@ void ListenReadHandler( void *ev ) {
     // socket reuse not free
     struct BaseEvent *event =
         ( struct BaseEvent * )malloc( sizeof( struct BaseEvent ) );
-    event->reactor      = event_listen->reactor;
-    event->ReadHandler  = ReadHandler;
-    event->WriteHandler = WriteHandler;
-    event->CloseHandler = CloseHandler;
-    event->socket_ptr   = client;
-    event->fd           = client->fd_;
-    event->events       = EPOLLIN | EPOLLET | EPOLLERR | EPOLLRDHUP;
+    event->reactor         = event_listen->reactor;
+    event->ReadHandler     = ReadHandler;
+    event->WriteHandler    = WriteHandler;
+    event->CloseHandler    = CloseHandler;
+    event->socket_ptr      = client;
+    event->fd              = client->fd_;
+    event->events          = EPOLLIN | EPOLLET | EPOLLERR | EPOLLRDHUP;
+    event->task.task_state = kTaskHolding;
 
     client->read_size             = 0;
     client->read_buffer_max_size  = kBufferSize;
@@ -54,5 +55,4 @@ void ListenCloseHandler( void *ev ) {
     DelEvent( event->reactor, ev );
     Close( event->fd );
     free( event->socket_ptr );
-    free( event );
 }

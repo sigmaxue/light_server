@@ -17,11 +17,13 @@
 extern struct Reactor reactor;
 extern struct Reactor thread_reactor;
 
+extern int LedContinueTask( struct BaseEvent *event );
 extern int LedInit( struct Task *task );
 extern int LedTask( struct Task *task );
 
 struct BaseEvent *led_ev;
-void *            ThreadRun( void *arg ) {
+
+void *ThreadRun( void *arg ) {
     struct Reactor *thread_reactor = ( struct Reactor * )arg;
     RunReactor( thread_reactor );
 }
@@ -33,7 +35,7 @@ void InitThreadReactor( ) {
 
     task->task.Init            = LedInit;
     task->task.handler         = LedTask;
-    task->task.ContinueHandler = LedTask;
+    task->task.ContinueHandler = LedContinueTask;
     task->task.delay_ms        = 500;
     task->task.enable          = 0;
     task->task.init_enable     = 0;
